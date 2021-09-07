@@ -3,11 +3,12 @@ import { Link, graphql } from "gatsby"
 
 import Layout from "../components/layout"
 import Seo from "../components/seo"
-
-const BlogPostTemplate = ({ data, location }) => {
+import TagLink from "../components/taglink";
+const BlogPostTemplate = ({ data, location, pageContext }) => {
   const post = data.markdownRemark
   const siteTitle = data.site.siteMetadata?.title || `Title`
-  const { previous, next } = data
+  const { previous, next } = pageContext
+  const tags = post.frontmatter.tags || [];
 
   return (
     <Layout location={location} title={siteTitle}>
@@ -23,6 +24,7 @@ const BlogPostTemplate = ({ data, location }) => {
         <header>
           <h1 itemProp="headline">{post.frontmatter.title}</h1>
           <p>{post.frontmatter.date}</p>
+          <p>Tags: {tags.map((tag, i, arr) => (<><TagLink tag={tag} /><span>{arr.length === i+1 ? `` : `, ` } </span> </>))} </p>
         </header>
         <section
           dangerouslySetInnerHTML={{ __html: post.html }}
@@ -66,17 +68,13 @@ const BlogPostTemplate = ({ data, location }) => {
 export default BlogPostTemplate
 
 export const pageQuery = graphql`
-  query BlogPostBySlug(
-    $id: String!
-    $previousPostId: String
-    $nextPostId: String
-  ) {
+  query BlogPostBySlug($slug: String!) {
     site {
       siteMetadata {
         title
       }
     }
-    markdownRemark(id: { eq: $id }) {
+    markdownRemark(fields: { slug: { eq: $slug } }) {
       id
       excerpt(pruneLength: 160)
       html
@@ -84,22 +82,7 @@ export const pageQuery = graphql`
         title
         date(formatString: "MMMM DD, YYYY")
         description
-      }
-    }
-    previous: markdownRemark(id: { eq: $previousPostId }) {
-      fields {
-        slug
-      }
-      frontmatter {
-        title
-      }
-    }
-    next: markdownRemark(id: { eq: $nextPostId }) {
-      fields {
-        slug
-      }
-      frontmatter {
-        title
+        tags
       }
     }
   }
